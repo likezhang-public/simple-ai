@@ -17,15 +17,31 @@ import codecs
 from io import open
 import itertools
 import math
-import wget
+import wget, zipfile
 
 DATASET_URL = "http://www.cs.cornell.edu/~cristian/data/cornell_movie_dialogs_corpus.zip"
+DATASET_PATH = "./movie_data"
+TRAINING_SAVE_PATH = "trainning_data"
 
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
 
 def checkAndDownloadMovieDataset():
-    
+    if os.path.isdir(DATASET_PATH):
+        return
+    filename = wget.download(DATASET_URL)
+    # with zipfile.ZipFile(filename, 'r') as zip_ref:
+    #     zip_ref.extractall(DATASET_PATH)
+
+    with zipfile.ZipFile(filename, 'r') as zip:
+        for zip_info in zip.infolist():
+            filename = zip_info.filename
+            if filename.startswith("__MACOSX/") or filename[-1]=="/":
+                continue
+            i = filename.find("/")
+            zip_info.filename = filename[i+1:]
+            print(zip_info.filename)
+            zip.extract(zip_info, DATASET_PATH)        
 
 
 def printLines(file, n=10):
@@ -34,8 +50,9 @@ def printLines(file, n=10):
     for line in lines[:n]:
         print(line)
 
-movieDataPath = "movie_data"
-printLines(os.path.join(movieDataPath, "movie_lines.txt"))
+checkAndDownloadMovieDataset()
+
+printLines(os.path.join(DATASET_PATH, "movie_lines.txt"))
 
 # Splits each line of the file into a dictionary of fields
 def loadLines(fileName, fields):
@@ -87,7 +104,7 @@ def extractSentencePairs(conversations):
 
 
 # Define path to new file
-datafile = os.path.join(movieDataPath, "formatted_movie_lines.txt")
+datafile = os.path.join(DATASET_PATH, "formatted_movie_lines.txt")
 
 delimiter = '\t'
 # Unescape the delimiter
@@ -100,10 +117,10 @@ MOVIE_LINES_FIELDS = ["lineID", "characterID", "movieID", "character", "text"]
 MOVIE_CONVERSATIONS_FIELDS = ["character1ID", "character2ID", "movieID", "utteranceIDs"]
 
 # Load lines and process conversations
-print("\nProcessing movieDataPath...")
-lines = loadLines(os.path.join(movieDataPath, "movie_lines.txt"), MOVIE_LINES_FIELDS)
+print("\nProcessing {}...".format(DATASET_PATH))
+lines = loadLines(os.path.join(DATASET_PATH, "movie_lines.txt"), MOVIE_LINES_FIELDS)
 print("\nLoading conversations...")
-conversations = loadConversations(os.path.join(movieDataPath, "movie_conversations.txt"),
+conversations = loadConversations(os.path.join(DATASET_PATH, "movie_conversations.txt"),
                                   lines, MOVIE_CONVERSATIONS_FIELDS)
 
 # Write new csv file
@@ -226,8 +243,8 @@ def loadPrepareData(corpus, corpus_name, datafile, save_dir):
 
 
 # Load/Assemble voc and pairs
-save_dir = os.path.join("data", "save")
-voc, pairs = loadPrepareData(movieDataPath, movieDataPath, datafile, save_dir)
+save_dir = os.path.join(TRAINING_SAVE_PATH, "save")
+voc, pairs = loadPrepareData(DATASET_PATH, DATASET_PATH, datafile, save_dir)
 # Print some pairs to validate
 print("\npairs:")
 for pair in pairs[:10]:
@@ -732,7 +749,7 @@ def start_trainning(encoder, decoder):
 	print("Starting Training!")
 	trainIters(model_name, voc, pairs, encoder, decoder, encoder_optimizer, decoder_optimizer,
 	           embedding, encoder_n_layers, decoder_n_layers, save_dir, n_iteration, batch_size,
-	           print_every, save_every, clip, movieDataPath, loadFilename)
+	           print_every, save_every, clip, TRAINING_SAVE_PATH, loadFilename)
 
 start_trainning(encoder, decoder)
 
