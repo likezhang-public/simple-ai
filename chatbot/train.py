@@ -17,10 +17,16 @@ import codecs
 from io import open
 import itertools
 import math
+import wget
 
+DATASET_URL = "http://www.cs.cornell.edu/~cristian/data/cornell_movie_dialogs_corpus.zip"
 
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
+
+def checkAndDownloadMovieDataset():
+    
+
 
 def printLines(file, n=10):
     with open(file, 'rb') as datafile:
