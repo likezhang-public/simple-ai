@@ -5,11 +5,13 @@ import pickle
 import torch
 import model.simple_cnn as simple_cnn
 import torchvision.transforms as transforms
-import io
+import io,os
 from PIL import Image
 import cv2
+import torch.nn as nn
 import numpy as np
 import base64
+from model.chatbot import loadChatbotModel, processUserInput
 
 
 app = Flask(__name__, static_url_path='')
@@ -62,6 +64,18 @@ def mnist_predict():
     return jsonify({"result": result})
 
 
+@app.route('/lesson3/chatbot', methods=['POST'])
+def chatbot():
+    # check if the post request has the file part
+    json = request.get_json()
+    userData = json["data"]["user_input"]
+    print(userData)
+    response = processUserInput(userData)
+
+    return jsonify({"result": response})
+
+
+
 def load_models():
     modelFilename = './data/lesson1_1.p'
     loaded_model = pickle.load(open(modelFilename, 'rb'))
@@ -71,6 +85,9 @@ def load_models():
     model.load_state_dict(torch.load("./data/mnist_cnn.pt"))
     model.eval()
     app.models["lesson2"] = model
+
+    loadChatbotModel()
+
 
 
 def predict(filename):
@@ -107,7 +124,6 @@ if __name__ == '__main__':
     app.debug = True
 
     load_models()
-
     print(predict("./data/num1.jpg"))
 
     app.run(host='0.0.0.0', threaded=True)

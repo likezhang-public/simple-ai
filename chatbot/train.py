@@ -23,6 +23,9 @@ DATASET_URL = "http://www.cs.cornell.edu/~cristian/data/cornell_movie_dialogs_co
 DATASET_PATH = "./movie_data"
 TRAINING_SAVE_PATH = "trainning_data"
 
+ENCODER_FILENAME="encoder.pt"
+DECODER_FILENAME="decoder.pt"
+
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
 
@@ -589,6 +592,9 @@ def trainIters(model_name, voc, pairs, encoder, decoder, encoder_optimizer, deco
                 'voc_dict': voc.__dict__,
                 'embedding': embedding.state_dict()
             }, os.path.join(directory, '{}_{}.tar'.format(iteration, 'checkpoint')))
+
+            torch.save(encoder.state_dict(), ENCODER_FILENAME)
+            torch.save(decoder.state_dict(), DECODER_FILENAME)
 
 
 class GreedySearchDecoder(nn.Module):
